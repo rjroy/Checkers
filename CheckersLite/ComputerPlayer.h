@@ -19,10 +19,9 @@ public:
 private:
 	const EPlayer m_player;
 	const unsigned int m_depth;
-
 	typedef std::map<CCheckersBoard, int> TExpectedScore;
 	TExpectedScore m_expectedScore;
 
-	int MiniMax( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth );
+	int AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
 };
 

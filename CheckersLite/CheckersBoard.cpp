@@ -46,6 +46,13 @@ int CMove::Compare( const CMove& rhs ) const
 }
 
 //--------------------------------------------------------------------------------------
+CCheckersBoard::CCheckersBoard(const CCheckersBoard& cpy, EPlayer movingPlayer, const CMove& move)
+{
+	*this = cpy;
+	MakeMoveIfValid( movingPlayer, move );
+}
+
+//--------------------------------------------------------------------------------------
 void CCheckersBoard::Initialize()
 {
 	m_blackPieces = 0l;
@@ -160,12 +167,9 @@ bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 //--------------------------------------------------------------------------------------
 int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
 {
-	int result = 0;
-
-	result += ( player == Player_Red )   ? BitCount( m_redPieces )   : -BitCount( m_redPieces );
-	result += ( player == Player_Black ) ? BitCount( m_blackPieces ) : -BitCount( m_blackPieces );
-
-	return result;
+	int redCount = BitCount( m_redPieces );
+	int blackCount = BitCount( m_blackPieces );
+	return ( player == Player_Black ) ? (2 * blackCount - redCount) : (2 * redCount - blackCount);
 }
 
 //--------------------------------------------------------------------------------------

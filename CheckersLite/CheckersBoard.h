@@ -62,6 +62,7 @@ class CCheckersBoard
 public:
 	enum { MaxScore = kBoardSize * kBoardSize, MinScore = - kBoardSize * kBoardSize };
 
+	CCheckersBoard(const CCheckersBoard& cpy, EPlayer movingPlayer, const CMove& move);
 	CCheckersBoard(void) { Initialize(); }
 	~CCheckersBoard(void) {}
 

@@ -16,11 +16,13 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	srand( (unsigned int)time(NULL) );
 
+	for( ;; )
+	{
 	CDisplay display;
 	CCheckersBoard board;
 
 	CComputerPlayer p1( Player_Red, 2 );
-	CComputerPlayer p2( Player_Black, 5 );
+	CComputerPlayer p2( Player_Black, 9 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	display.Show( cout, board );
@@ -48,9 +50,18 @@ int _tmain(int argc, _TCHAR* argv[])
 		cout << "P2: " << board.CalculatePlayerScore( p2.GetPlayer() ) << endl << endl;
 	}
 
+	int p1Score = board.CalculatePlayerScore( p1.GetPlayer() );
+	int p2Score = board.CalculatePlayerScore( p2.GetPlayer() );
+	if( p1Score > p2Score )
+		cout << "Player 1 Wins!" << endl;
+	else if( p2Score > p1Score )
+		cout << "Player 2 Wins!" << endl;
+	else
+		cout << "Tie." << endl;
+
 	cout << "DONE" << endl;
-	cin.ignore();
 	cin.get();
+	}
 
 	return 0;
 }
