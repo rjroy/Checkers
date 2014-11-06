@@ -59,3 +59,4 @@ Temporary Items
 *.ipch
 *.ilk
 *.lastbuildstate
+*.lib
