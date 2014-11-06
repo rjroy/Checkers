@@ -35,6 +35,12 @@ void CDisplay::Show( std::ostream& os, const CCheckersBoard& board ) const
 			case SquareState_Red:
 				os << "X";
 				break;
+			case SquareState_BlackKing:
+				os << "P";
+				break;
+			case SquareState_RedKing:
+				os << "Y";
+				break;
 			default:
 				os << ".";
 				break;

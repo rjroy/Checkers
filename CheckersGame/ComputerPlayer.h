@@ -19,9 +19,12 @@ public:
 private:
 	const EPlayer m_player;
 	const unsigned int m_depth;
+
+	// Memory of expected AlphaBeta results.
 	typedef std::map<CCheckersBoard, int> TExpectedScore;
 	TExpectedScore m_expectedScore;
 
+	// Determine the best score for the given move using alpha-beta prunning.
 	int AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
 };
 

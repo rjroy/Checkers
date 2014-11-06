@@ -22,7 +22,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	CCheckersBoard board;
 
 	CComputerPlayer p1( Player_Red, 3 );
-	CComputerPlayer p2( Player_Black, 8 );
+	CComputerPlayer p2( Player_Black, 4 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	display.Show( cout, board );

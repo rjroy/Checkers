@@ -9,6 +9,7 @@ static int BitCount( unsigned int i )
      return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
+//--------------------------------------------------------------------------------------
 static int BitCount( unsigned __int64 l )
 {
 	return BitCount( (unsigned int)l ) + BitCount( (unsigned int)(l >> 32) );
@@ -55,8 +56,10 @@ CCheckersBoard::CCheckersBoard(const CCheckersBoard& cpy, EPlayer movingPlayer, 
 //--------------------------------------------------------------------------------------
 void CCheckersBoard::Initialize()
 {
-	m_blackPieces = 0l;
-	m_redPieces = 0l;
+	m_blackPieces = 0ll;
+	m_redPieces = 0ll;
+	m_blackKings = 0ll;
+	m_redKings = 0ll;
 	for( int i = 0; i < 4; ++i )
 	{
 		SetSquareState( SPosition(1 + i * 2, 0), SquareState_Red );
@@ -70,7 +73,7 @@ void CCheckersBoard::Initialize()
 }
 
 //--------------------------------------------------------------------------------------
-bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector<SPosition>* pRemovedPieces, SPosition* pFinalPosition ) const
+bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector<SPosition>* pRemovedPieces, SPosition* pFinalPosition, ESquareState* pNewState ) const
 {
 	if( pRemovedPieces )
 		pRemovedPieces->clear();
@@ -78,15 +81,21 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 	if( !move.m_start.IsValid() )
 		return false;
 
-	if( GetSquareState( move.m_start ) != GetPlayerSquare( player ) )
+	if( GetPlayerOwner( GetSquareState( move.m_start ) ) != player )
 		return false;
 
 	if( !move.m_sequence.size() )
 		return false;
 
-	ESquareState opponentSquare = GetPlayerSquare( GetOpponent( player ) );
+	EPlayer opponentPlayer = GetOpponent( player );
+	bool isKing = IsKing( GetSquareState( move.m_start ) );
+	
+	// Only test for loops with kings since only they can jump backwards.
+	if( isKing && EndsInLoop( move.m_sequence ) )
+		return false;
 
 	SPosition curr = move.m_start;
+	SPosition prev( 0, 0 );
 	bool hasJumped = false;
 	for( size_t i = 0; i < move.m_sequence.size(); ++i )
 	{
@@ -97,10 +106,13 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 		if( !next.IsValid() )
 			return false;
 
+		if( next == prev )
+			return false;
+
 		if( GetSquareState( next ) != SquareState_Blank )
 			return false;
 
-		// NOTE: The range of m_x and m_y is [0,8] therefore an int cast won't overflow.
+		// NOTE: The range of m_x and m_y is [0,7] therefore an int cast won't overflow.
 		int disX = abs( (int)curr.m_x - (int)next.m_x );
 		int disY = abs( (int)curr.m_y - (int)next.m_y );
 		if( disX != disY )
@@ -112,17 +124,20 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 		if( i > 0 && disY == 1 )
 			return false;
 
-		// CheckersLite: Can only ever move in one direction vertically.
-		switch( player )
+		// Only kings can reverse direction.
+		if( !isKing )
 		{
-		case Player_Red:
-			if( curr.m_y > next.m_y )
-				return false;
-			break;
-		case Player_Black:
-			if( curr.m_y < next.m_y )
-				return false;
-			break;
+			switch( player )
+			{
+			case Player_Red:
+				if( curr.m_y > next.m_y )
+					return false;
+				break;
+			case Player_Black:
+				if( curr.m_y < next.m_y )
+					return false;
+				break;
+			}
 		}
 
 		// Jump test.
@@ -131,7 +146,7 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 			SPosition middle;
 			if( !GetMiddlePosition( curr, next, middle ) )
 				return false;
-			if( GetSquareState( middle ) != opponentSquare )
+			if( GetPlayerOwner( GetSquareState( middle ) ) != opponentPlayer )
 				return false;
 
 			if( pRemovedPieces )
@@ -139,10 +154,27 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 			hasJumped = true;
 		}
 
+		prev = curr;
 		curr = next;
 	}
 	if( pFinalPosition )
 		*pFinalPosition = curr;
+	if( pNewState )
+	{
+		// If the piece reaches the back row then it becomes a king if it isn't already.
+		switch( player )
+		{
+		case Player_Red:
+			*pNewState = (curr.m_y == 7 || isKing) ? SquareState_RedKing : SquareState_Red;
+			break;
+		case Player_Black:
+			*pNewState = (curr.m_y == 0 || isKing) ? SquareState_BlackKing : SquareState_Black;
+			break;
+		default:
+			// error state.
+			return false;
+		}
+	}
 
 	return true;
 }
@@ -152,14 +184,15 @@ bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 {
 	std::vector<SPosition> removed;
 	SPosition final;
+	ESquareState newState;
 
-	if( !IsValidMove( player, move, &removed, &final ) ) 
+	if( !IsValidMove( player, move, &removed, &final, &newState ) ) 
 		return false;
 
 	SetSquareState( move.m_start, SquareState_Blank );
 	for( size_t i = 0; i < removed.size(); ++i )
 		SetSquareState( removed[i], SquareState_Blank );
-	SetSquareState( final, GetPlayerSquare( player) );
+	SetSquareState( final, newState );
 
 	return true;
 }
@@ -167,9 +200,18 @@ bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 //--------------------------------------------------------------------------------------
 int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
 {
-	int result = ( player == Player_Red   ) ? BitCount( m_redPieces )   : -BitCount( m_redPieces );
-	result    += ( player == Player_Black ) ? BitCount( m_blackPieces ) : -BitCount( m_blackPieces );
-	return result;
+	// Score kings as 2 points.
+
+	int redScore   = BitCount( m_redPieces   ) + 2 * BitCount( m_redKings );
+	int blackScore = BitCount( m_blackPieces ) + 2 * BitCount( m_blackKings );
+
+	// Test for win state.
+	if( !redScore )
+		blackScore = CCheckersBoard::MaxScore;
+	if( !blackScore )
+		redScore = CCheckersBoard::MaxScore;
+
+	return ( player == Player_Red ) ? ( redScore - blackScore ) : ( blackScore - redScore );
 }
 
 //--------------------------------------------------------------------------------------
@@ -263,8 +305,6 @@ bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::GetMoves( EPlayer player, std::vector<CMove>& moves ) const
 {
-	ESquareState playerState = GetPlayerSquare( player );
-
 	bool hasJumps = false;
 
 	for( unsigned int x = 0; x < kBoardSize; ++x )
@@ -272,7 +312,7 @@ bool CCheckersBoard::GetMoves( EPlayer player, std::vector<CMove>& moves ) const
 		for( unsigned int y = 0; y < kBoardSize; ++y )
 		{
 			SPosition start( x, y );
-			if( GetSquareState( start ) == playerState )
+			if( GetPlayerOwner( GetSquareState( start ) ) == player )
 			{
 				if( !hasJumps )
 					AddSimpleMoves( player, start, moves );
@@ -285,16 +325,33 @@ bool CCheckersBoard::GetMoves( EPlayer player, std::vector<CMove>& moves ) const
 }
 
 //--------------------------------------------------------------------------------------
-ESquareState CCheckersBoard::GetPlayerSquare( EPlayer player )
+EPlayer CCheckersBoard::GetPlayerOwner( ESquareState square )
 {
-	switch( player )
+	switch( square )
 	{
-	case Player_Red:
-		return SquareState_Red;
-	case Player_Black:
-		return SquareState_Black;
+	case SquareState_Red:
+	case SquareState_RedKing:
+		return Player_Red;
+	case SquareState_Black:
+	case SquareState_BlackKing:
+		return Player_Black;
 	default:
-		return SquareState_Blank;
+		return Player_None;
+	};
+}
+
+//--------------------------------------------------------------------------------------
+bool CCheckersBoard::IsKing( ESquareState square )
+{
+	switch( square )
+	{
+	case SquareState_RedKing:
+	case SquareState_BlackKing:
+		return true;
+	case SquareState_Black:
+	case SquareState_Red:
+	default:
+		return false;
 	};
 }
 
@@ -331,4 +388,25 @@ bool CCheckersBoard::GetMiddlePosition( const SPosition& start, const SPosition&
 	middle.m_y = ( start.m_y + next.m_y ) / 2;
 	
 	return( middle.IsValid() && middle != start && middle != next );
+}
+
+//--------------------------------------------------------------------------------------
+bool CCheckersBoard::EndsInLoop( const std::vector<SPosition>& sequence )
+{
+	size_t maxLoopSize = sequence.size() >> 1;
+	for( size_t testSize = 2; testSize <= maxLoopSize; ++testSize )
+	{
+		bool found = true;
+		for( int i1 = sequence.size() - 1, i2 = sequence.size() - 1 - testSize; i1 >= 0 && i2 >= 0; i1--, i2-- )
+		{
+			if( sequence[i1] != sequence[i2] )
+			{
+				found = false;
+				break;
+			}
+		}
+		if( found )
+			return true;
+	}
+	return false;
 }
