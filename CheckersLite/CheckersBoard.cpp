@@ -2,6 +2,19 @@
 #include "CheckersBoard.h"
 
 //--------------------------------------------------------------------------------------
+static int BitCount( unsigned int i )
+{
+	i = i - ((i >> 1) & 0x55555555);
+     i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+     return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
+static int BitCount( unsigned __int64 l )
+{
+	return BitCount( (unsigned int)l ) + BitCount( (unsigned int)(l >> 32) );
+}
+
+//--------------------------------------------------------------------------------------
 int SPosition::Compare( const SPosition& rhs ) const
 {
 	int result = m_x - rhs.m_x;
@@ -35,7 +48,8 @@ int CMove::Compare( const CMove& rhs ) const
 //--------------------------------------------------------------------------------------
 void CCheckersBoard::Initialize()
 {
-	memset( m_spaces, 0x00, sizeof(m_spaces) );
+	m_blackPieces = 0l;
+	m_redPieces = 0l;
 	for( int i = 0; i < 4; ++i )
 	{
 		SetSquareState( SPosition(1 + i * 2, 0), SquareState_Red );
@@ -148,22 +162,8 @@ int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
 {
 	int result = 0;
 
-	static const unsigned int spaceCount = kBoardSize * kBoardSize;
-	for( unsigned int i = 0; i < spaceCount; ++i )
-	{
-		switch( m_spaces[i] )
-		{
-		case SquareState_Red:
-			result += ( player == Player_Red ) ? 1 : -1;
-			break;
-		case SquareState_Black:
-			result += ( player == Player_Black ) ? 1 : -1;
-			break;
-		case SquareState_Blank:
-		default:
-			break;
-		}
-	}
+	result += ( player == Player_Red )   ? BitCount( m_redPieces )   : -BitCount( m_redPieces );
+	result += ( player == Player_Black ) ? BitCount( m_blackPieces ) : -BitCount( m_blackPieces );
 
 	return result;
 }

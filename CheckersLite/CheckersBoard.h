@@ -71,7 +71,16 @@ public:
 	// Returns the piece on a particulare square.
 	ESquareState GetSquareState( const SPosition& pos ) const 
 	{ 
-		return ( pos.IsValid() ) ? m_spaces[ pos.ToIndex() ] : SquareState_Blank; 
+		static const unsigned __int64 one = 1;
+
+		if( !pos.IsValid() ) 
+			return SquareState_Blank;
+		if( m_blackPieces & ( one << pos.ToIndex() ) )
+			return SquareState_Black;
+		if ( m_redPieces  & ( one << pos.ToIndex() ) )
+			return SquareState_Red;
+
+		return SquareState_Blank;
 	}
 
 	// Calculates the list of valid moves for a provided player.
@@ -94,14 +103,35 @@ public:
 
 private:
 	// The memory holding the game state.
-	ESquareState m_spaces[kBoardSize * kBoardSize];
+	// NOTE: assumes a kBoardSize of 8
+	unsigned __int64 m_blackPieces;
+	unsigned __int64 m_redPieces;
 
 	// Sets the game state of a space.
 	ESquareState SetSquareState( const SPosition& pos, ESquareState state ) 
 	{ 
+		static const unsigned __int64 one = 1;
+
 		if( pos.IsValid() ) 
-			// perform assignment then return the new state.
-			return m_spaces[ pos.ToIndex() ] = state; 
+		{
+			switch( state )
+			{
+			case SquareState_Red:
+				m_blackPieces &= ~( one << pos.ToIndex() );
+				m_redPieces   |=  ( one << pos.ToIndex() );
+				break;
+			case SquareState_Black:
+				m_redPieces   &= ~( one << pos.ToIndex() );
+				m_blackPieces |=  ( one << pos.ToIndex() );
+				break;
+			case SquareState_Blank:
+			default:
+				m_blackPieces &= ~( one << pos.ToIndex() );
+				m_redPieces   &= ~( one << pos.ToIndex() );
+				break;
+			}
+			return state; 
+		}
 		return SquareState_Blank;
 	}
 
