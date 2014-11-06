@@ -167,9 +167,9 @@ bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 //--------------------------------------------------------------------------------------
 int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
 {
-	int redCount = BitCount( m_redPieces );
-	int blackCount = BitCount( m_blackPieces );
-	return ( player == Player_Black ) ? (2 * blackCount - redCount) : (2 * redCount - blackCount);
+	int result = ( player == Player_Red   ) ? BitCount( m_redPieces )   : -BitCount( m_redPieces );
+	result    += ( player == Player_Black ) ? BitCount( m_blackPieces ) : -BitCount( m_blackPieces );
+	return result;
 }
 
 //--------------------------------------------------------------------------------------

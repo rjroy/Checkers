@@ -21,8 +21,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	CDisplay display;
 	CCheckersBoard board;
 
-	CComputerPlayer p1( Player_Red, 2 );
-	CComputerPlayer p2( Player_Black, 9 );
+	CComputerPlayer p1( Player_Red, 3 );
+	CComputerPlayer p2( Player_Black, 8 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	display.Show( cout, board );
