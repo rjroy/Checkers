@@ -10,6 +10,8 @@
 #include <iostream>
 using namespace std;
 
+bool UserMove( CCheckersBoard& board, const CDisplay& display, EPlayer userPlayer );
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	srand( (unsigned int)time(NULL) );
@@ -18,38 +20,32 @@ int _tmain(int argc, _TCHAR* argv[])
 	CCheckersBoard board;
 
 	CComputerPlayer p1( Player_Red );
-	EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
+	CComputerPlayer p2( Player_Black );
+	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
+	display.Show( cout, board );
+	cout << endl;
 	for( ;; )
 	{
-		display.ClearScreen( cout );
-
-		if( !p1.Move( board ) )
+		if( !p1.Move( board, 0 ) )
 		{
 			display.Show( cout, board );
 			break;
 		}
 
 		display.Show( cout, board );
+		cout << "P1: " << board.CalculatePlayerScore( p1.GetPlayer() ) << endl << endl;
 
-		std::vector<CMove> moves;
-		if( !board.GetMoves( p2, moves ) )
-			break;
-		if( moves.empty() )
-			break;
+		// if( !UserMove( board, display, p2 ) ) break;
 
-		unsigned int selection;
-		do {
-			display.ShowMoves( cout, moves );
-			cout << "Please select a move: ";
-			cin >> selection;
-		} while( selection >= moves.size() );
-		if( !board.MakeMoveIfValid( p2, moves[selection] ) )
+		if( !p2.Move( board, 4 ) )
 		{
-			cout << "failed to make the valid move: " << selection << endl;
+			display.Show( cout, board );
 			break;
 		}
 
+		display.Show( cout, board );
+		cout << "P2: " << board.CalculatePlayerScore( p2.GetPlayer() ) << endl << endl;
 	}
 
 	cout << "DONE" << endl;
@@ -59,3 +55,25 @@ int _tmain(int argc, _TCHAR* argv[])
 	return 0;
 }
 
+bool UserMove( CCheckersBoard& board, const CDisplay& display, EPlayer userPlayer)
+{
+	std::vector<CMove> moves;
+	if( !board.GetMoves( userPlayer, moves ) )
+		return false;
+	if( moves.empty() )
+		return false;
+
+	unsigned int selection;
+	do {
+		display.ShowMoves( cout, moves );
+		cout << "Please select a move: ";
+		cin >> selection;
+	} while( selection >= moves.size() );
+	if( !board.MakeMoveIfValid( userPlayer, moves[selection] ) )
+	{
+		cout << "failed to make the valid move: " << selection << endl;
+		return false;
+	}
+
+	return true;
+}

@@ -144,6 +144,31 @@ bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 }
 
 //--------------------------------------------------------------------------------------
+int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
+{
+	int result = 0;
+
+	static const unsigned int spaceCount = kBoardSize * kBoardSize;
+	for( unsigned int i = 0; i < spaceCount; ++i )
+	{
+		switch( m_spaces[i] )
+		{
+		case SquareState_Red:
+			result += ( player == Player_Red ) ? 1 : -1;
+			break;
+		case SquareState_Black:
+			result += ( player == Player_Black ) ? 1 : -1;
+			break;
+		case SquareState_Blank:
+		default:
+			break;
+		}
+	}
+
+	return result;
+}
+
+//--------------------------------------------------------------------------------------
 bool CCheckersBoard::AddSimpleMoves( EPlayer player, const SPosition& start, std::vector<CMove>& moves ) const
 {
 	bool added = false;

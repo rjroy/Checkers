@@ -60,6 +60,8 @@ public:
 class CCheckersBoard
 {
 public:
+	enum { MaxScore = kBoardSize * kBoardSize, MinScore = - kBoardSize * kBoardSize };
+
 	CCheckersBoard(void) { Initialize(); }
 	~CCheckersBoard(void) {}
 
@@ -80,6 +82,9 @@ public:
 
 	// Tests if a move is valid and finalizes it.
 	bool MakeMoveIfValid( EPlayer player, const CMove& move );
+
+	// Evaluate score.
+	int CalculatePlayerScore( EPlayer player ) const;
 
 	// Returns the opponent player to the given player.
 	static EPlayer GetOpponent( EPlayer player ) { return( player == Player_Red ? Player_Black : Player_Red ); }
