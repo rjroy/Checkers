@@ -29,8 +29,8 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 	std::sort( scoredMoves.begin(), scoredMoves.end(), []( const TScoredMove& lhs, const TScoredMove& rhs)->bool{return lhs.second > rhs.second;} );
 
 	// Pick the first one which will be random.
-	int result = board.MakeMoveIfValid( m_player, scoredMoves[0].first );
-	m_expectedScore[ board ] = result;
+	bool result = board.MakeMoveIfValid( m_player, scoredMoves[0].first );
+	m_expectedScore[ board ] = scoredMoves[0].second;
 	return result;
 }
 
