@@ -16,7 +16,7 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	srand( (unsigned int)time(NULL) );
 
-	for( ;; )
+	//for( ;; ) // for repeated testing.
 	{
 	CDisplay display;
 	CCheckersBoard board;
@@ -27,7 +27,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 	display.Show( cout, board );
 	cout << endl;
-	for( ;; )
+	for( ;; ) 
 	{
 		if( !p1.Move( board ) )
 		{
