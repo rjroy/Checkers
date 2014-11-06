@@ -19,15 +19,15 @@ int _tmain(int argc, _TCHAR* argv[])
 	CDisplay display;
 	CCheckersBoard board;
 
-	CComputerPlayer p1( Player_Red );
-	CComputerPlayer p2( Player_Black );
+	CComputerPlayer p1( Player_Red, 2 );
+	CComputerPlayer p2( Player_Black, 5 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	display.Show( cout, board );
 	cout << endl;
 	for( ;; )
 	{
-		if( !p1.Move( board, 0 ) )
+		if( !p1.Move( board ) )
 		{
 			display.Show( cout, board );
 			break;
@@ -38,7 +38,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
 		// if( !UserMove( board, display, p2 ) ) break;
 
-		if( !p2.Move( board, 4 ) )
+		if( !p2.Move( board ) )
 		{
 			display.Show( cout, board );
 			break;

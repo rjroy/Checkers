@@ -28,8 +28,8 @@ enum EPlayer
 // Represents a position on the board.
 struct SPosition
 {
-	unsigned int m_x;
-	unsigned int m_y;
+	unsigned char m_x : 4;
+	unsigned char m_y : 4;
 
 	SPosition() : m_x(0), m_y(0) {}
 	SPosition( unsigned int x, unsigned int y ) : m_x(x), m_y(y) { }
@@ -100,6 +100,17 @@ public:
 
 	// Returns the piece state used by the given player.
 	static ESquareState GetPlayerSquare( EPlayer player );
+
+	int CompareBlack( const CCheckersBoard& rhs ) const { return ( m_blackPieces == rhs.m_blackPieces ) ? 0 : ( m_blackPieces > rhs.m_blackPieces ) ? 1 : -1; }
+	int CompareRed( const CCheckersBoard& rhs ) const { return ( m_redPieces == rhs.m_redPieces ) ? 0 : ( m_redPieces > rhs.m_redPieces ) ? 1 : -1; }
+	int Compare( const CCheckersBoard& rhs ) const { int black = CompareBlack( rhs ); if( black ) return black; return CompareRed( rhs ); }
+
+	bool operator==( const CCheckersBoard& rhs ) const { return Compare( rhs ) == 0; }
+	bool operator!=( const CCheckersBoard& rhs ) const { return Compare( rhs ) != 0; }
+	bool operator< ( const CCheckersBoard& rhs ) const { return Compare( rhs ) <  0; }
+	bool operator<=( const CCheckersBoard& rhs ) const { return Compare( rhs ) <= 0; }
+	bool operator> ( const CCheckersBoard& rhs ) const { return Compare( rhs ) >  0; }
+	bool operator>=( const CCheckersBoard& rhs ) const { return Compare( rhs ) >= 0; }
 
 private:
 	// The memory holding the game state.
