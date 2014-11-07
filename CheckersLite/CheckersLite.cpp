@@ -16,14 +16,14 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	srand( (unsigned int)time(NULL) );
 
+	CComputerPlayer p1( Player_Red, 3 );
+	CComputerPlayer p2( Player_Black, 8 );
+	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
+
 	//for( ;; ) // for repeated testing.
 	{
 	CDisplay display;
 	CCheckersBoard board;
-
-	CComputerPlayer p1( Player_Red, 3 );
-	CComputerPlayer p2( Player_Black, 4 );
-	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	display.Show( cout, board );
 	cout << endl;

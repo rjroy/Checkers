@@ -31,7 +31,7 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 	// Pick the first one which will be random.
 	bool result = board.MakeMoveIfValid( m_player, scoredMoves[0].first );
 	// Cache the expected score for this board state.
-	m_expectedScore[ board ] = scoredMoves[0].second;
+	m_expectedScore.UpdateCache( board, scoredMoves[0].second );
 	return result;
 }
 
@@ -39,9 +39,9 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta )
 {
 	// Check for an already cached more state.
-	TExpectedScore::iterator scoreItr = m_expectedScore.find( board );
-	if( scoreItr != m_expectedScore.end() )
-		return scoreItr->second;
+	int* pScore = m_expectedScore.Get( board );
+	if( pScore )
+		return *pScore;
 
 	// Stop testing if at max depth.
 	if( !depth )
@@ -69,9 +69,27 @@ int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, 
 		scoredMoves[i] = std::make_pair( moves[i], CCheckersBoard( cpy, nextPlayer, moves[i] ).CalculatePlayerScore( m_player ) );
 	}
 
+	CMove* pExpectedMove = m_expectedMove.Get( cpy );
+
 	// sort based on simple expected score to try and get better early pruning.
-	auto compareScore = [this, nextPlayer]( const TScoredMove& lhs, const TScoredMove& rhs )->bool{ 
-		return ( m_player == nextPlayer ) ? ( lhs.second > rhs.second ) : ( lhs.second < rhs.second ); 
+	auto compareScore = [this, nextPlayer, pExpectedMove]( const TScoredMove& lhs, const TScoredMove& rhs )->bool{
+		// Assure the expected move is at the front.		
+		if( pExpectedMove )
+		{
+			if( lhs.first == rhs.first )
+			{
+				return false;
+			}
+			if( lhs.first == *pExpectedMove ) 
+			{
+				return true;
+			}
+			if( rhs.first == *pExpectedMove )
+			{
+				return false;
+			}
+		}
+		return ( m_player == nextPlayer ) ? ( lhs.second < rhs.second ) : ( lhs.second > rhs.second ); 
 	};
 	std::sort( scoredMoves.begin(), scoredMoves.end(), compareScore );	
 
@@ -80,27 +98,41 @@ int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, 
 	if( m_player == nextPlayer )
 	{
 		// Maximizing this player
+		size_t bestMove = scoredMoves.size();
 		for( size_t i = 0; i < scoredMoves.size(); ++i )
 		{
 			int val = AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta );
-			alpha = std::max( alpha, val );
-			// prune because we are not going to find any better.
-			if( beta <= alpha )
-				break;
+			if( val > alpha )
+			{
+				alpha = val;
+				bestMove = i;
+				// prune because we are not going to find any better.
+				if( beta <= alpha )
+					break;
+			}
 		}
+		if( bestMove < scoredMoves.size() )
+			m_expectedMove.UpdateCache( cpy, scoredMoves[bestMove].first );
 		return alpha;
 	}
 	else
 	{
 		// Minimizing this player.
+		size_t bestMove = scoredMoves.size();
 		for( size_t i = 0; i < scoredMoves.size(); ++i )
 		{
 			int val = AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta );
-			beta = std::min( beta, val );
-			// prune because we are not going to find any worse.
-			if( beta <= alpha )
-				break;
+			if( val < beta )
+			{
+				beta = val;
+				bestMove = i;
+				// prune because we are not going to find any worse.
+				if( beta <= alpha )
+					break;
+			}
 		}
+		if( bestMove < scoredMoves.size() )
+			m_expectedMove.UpdateCache( cpy, scoredMoves[bestMove].first );
 		return beta;
 	}
 }

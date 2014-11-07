@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckersBoard.h" />
+    <ClInclude Include="LearningCache.h" />
     <ClInclude Include="ComputerPlayer.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

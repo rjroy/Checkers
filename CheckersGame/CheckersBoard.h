@@ -2,10 +2,12 @@
 
 #include <memory.h>
 #include <vector>
+#include <xhash>
 
 static const int kBoardSize = 8;
 static const int kMoveIndexLimit = 4;
 
+//--------------------------------------------------------------------------------------
 // Used to mark which piece is in a square.
 enum ESquareState
 {
@@ -18,6 +20,7 @@ enum ESquareState
 	SquareStateCount
 };
 
+//--------------------------------------------------------------------------------------
 // Used to identify the two players.
 enum EPlayer
 {
@@ -28,6 +31,7 @@ enum EPlayer
 	PlayerCount
 };
 
+//--------------------------------------------------------------------------------------
 // Represents a position on the board.
 struct SPosition
 {
@@ -46,6 +50,7 @@ struct SPosition
 	bool operator != ( const SPosition& rhs ) const { return Compare( rhs ) != 0; }
 };
 
+//--------------------------------------------------------------------------------------
 // Represents a potential move.
 class CMove
 {
@@ -59,6 +64,7 @@ public:
 	bool operator != ( const CMove& rhs ) const { return Compare( rhs ) != 0; }
 };
 
+//--------------------------------------------------------------------------------------
 // Represents the board and performs most game operations.
 class CCheckersBoard
 {
@@ -104,6 +110,13 @@ public:
 	bool operator<=( const CCheckersBoard& rhs ) const { return Compare( rhs ) <= 0; }
 	bool operator> ( const CCheckersBoard& rhs ) const { return Compare( rhs ) >  0; }
 	bool operator>=( const CCheckersBoard& rhs ) const { return Compare( rhs ) >= 0; }
+
+	operator size_t() const
+	{
+		unsigned int* begin = (unsigned int*)(this);
+		unsigned int* end = begin + sizeof(CCheckersBoard) / sizeof(unsigned int);
+		return stdext::_Hash_value( begin, end );
+	}
 
 private:
 	// The memory holding the game state.

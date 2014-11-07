@@ -36,14 +36,7 @@ int CMove::Compare( const CMove& rhs ) const
 		return result;
 
 	// NOTE: m_sequence.size() == rhs.m_sequence.size()
-	for( size_t i = 0; i < m_sequence.size(); ++i )
-	{
-		result = m_sequence[i].Compare( rhs.m_sequence[i] );
-		if( result )
-			return result;
-	}
-
-	return 0;
+	return memcmp( &m_sequence[0], &rhs.m_sequence[0], sizeof( SPosition ) * m_sequence.size() );
 }
 
 //--------------------------------------------------------------------------------------
