@@ -1,5 +1,7 @@
 #pragma once
 
+#include "stdafx.h"
+
 #include <memory.h>
 #include <vector>
 #include <xhash>
@@ -118,6 +120,10 @@ public:
 		return stdext::_Hash_value( begin, end );
 	}
 
+	static CPerfTimer s_GetMoves;
+	static CPerfTimer s_IsValidMove;
+	static CPerfTimer s_MakeMoveIfValid;
+
 private:
 	// The memory holding the game state.
 	// NOTE: assumes a kBoardSize of 8
@@ -228,4 +234,30 @@ inline int CCheckersBoard::Compare( const CCheckersBoard& rhs ) const
 	result = CompareRed( rhs ); if( result ) return result; 
 	result = CompareBlackKing( rhs ); if( result ) return result; 
 	return CompareRedKing( rhs ); 
+}
+
+//--------------------------------------------------------------------------------------
+inline bool CCheckersBoard::GetNextSpace( const SPosition& start, int moveIndex, SPosition& next )
+{
+	switch( moveIndex )
+	{
+	case 0:
+		next.m_x = start.m_x + 1;
+		next.m_y = start.m_y + 1;
+		return next.IsValid();
+	case 1:
+		next.m_x = start.m_x - 1;
+		next.m_y = start.m_y + 1;
+		return next.IsValid();
+	case 2:
+		next.m_x = start.m_x + 1;
+		next.m_y = start.m_y - 1;
+		return next.IsValid();
+	case 3:
+		next.m_x = start.m_x - 1;
+		next.m_y = start.m_y - 1;
+		return next.IsValid();
+	}
+
+	return false;
 }

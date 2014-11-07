@@ -20,7 +20,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	CComputerPlayer p2( Player_Black, 8 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
-	//for( ;; ) // for repeated testing.
+	for( ;; ) // for repeated testing.
 	{
 	CDisplay display;
 	CCheckersBoard board;
@@ -60,6 +60,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		cout << "Tie." << endl;
 
 	cout << "DONE" << endl;
+	cout << CCheckersBoard::s_GetMoves;
+	cout << CCheckersBoard::s_IsValidMove;
+	cout << CCheckersBoard::s_MakeMoveIfValid;
+	cout << CComputerPlayer::s_AlphaBeta;
+	cout << CComputerPlayer::s_Move;
+
 	cin.get();
 	}
 

@@ -5,9 +5,14 @@
 
 typedef std::pair<CMove, int> TScoredMove;
 
+CPerfTimer CComputerPlayer::s_Move( "CComputerPlayer::Move" );
+CPerfTimer CComputerPlayer::s_AlphaBeta( "CComputerPlayer::AlphaBeta" );
+
 //--------------------------------------------------------------------------------------
 bool CComputerPlayer::Move( CCheckersBoard& board )
 {
+	CPerfTimerCall __call( s_Move );
+
 	std::vector<CMove> moves;
 	if( !board.GetMoves( m_player, moves ) )
 		return false;
@@ -38,6 +43,8 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 //--------------------------------------------------------------------------------------
 int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta )
 {
+	CPerfTimerCall __call( s_AlphaBeta );
+
 	// Check for an already cached more state.
 	int* pScore = m_expectedScore.Get( board );
 	if( pScore )

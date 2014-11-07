@@ -1,5 +1,7 @@
 #pragma once
 
+#include "stdafx.h"
+
 #include "CheckersBoard.h"
 #include "LearningCache.h"
 
@@ -9,7 +11,7 @@
 //--------------------------------------------------------------------------------------
 class CComputerPlayer
 {
-	enum { ScoreCacheSize = 1000, MoveCacheSize = 1024 * 1024 };
+	enum { ScoreCacheSize = 1000, MoveCacheSize = 10240 };
 public:
 	CComputerPlayer( EPlayer player, unsigned int depth = 3 ) : m_player( player ), m_depth( depth ), m_expectedScore(ScoreCacheSize), m_expectedMove(MoveCacheSize) { }
 	~CComputerPlayer(void) {}
@@ -19,6 +21,9 @@ public:
 
 	// Asks that the computer make a random valid move.
 	bool Move( CCheckersBoard& board );
+
+	static CPerfTimer s_Move;
+	static CPerfTimer s_AlphaBeta;
 
 private:
 	const EPlayer m_player;

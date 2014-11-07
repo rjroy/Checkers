@@ -1,6 +1,10 @@
 #include "StdAfx.h"
 #include "CheckersBoard.h"
 
+
+CPerfTimer CCheckersBoard::s_GetMoves( "CCheckersBoard::GetMoves" );
+CPerfTimer CCheckersBoard::s_IsValidMove( "CCheckersBoard::IsValidMove" );
+CPerfTimer CCheckersBoard::s_MakeMoveIfValid( "CCheckersBoard::MakeMoveIfValid" );
 //--------------------------------------------------------------------------------------
 static int BitCount( unsigned int i )
 {
@@ -68,6 +72,8 @@ void CCheckersBoard::Initialize()
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector<SPosition>* pRemovedPieces, SPosition* pFinalPosition, ESquareState* pNewState ) const
 {
+	CPerfTimerCall __call( s_IsValidMove );
+
 	if( pRemovedPieces )
 		pRemovedPieces->clear();
 
@@ -92,30 +98,26 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 	bool hasJumped = false;
 	for( size_t i = 0; i < move.m_sequence.size(); ++i )
 	{
-		if( i > 0 && !hasJumped )
-			return false;
+		// Since we know how the moves are being build, we just need to do asserts.
+		assert( i == 0 || hasJumped );
 
 		SPosition next = move.m_sequence[i];
-		if( !next.IsValid() )
-			return false;
-
-		if( next == prev )
-			return false;
+		assert( next.IsValid() );
 
 		if( GetSquareState( next ) != SquareState_Blank )
+			return false;
+		if( next == prev )
 			return false;
 
 		// NOTE: The range of m_x and m_y is [0,7] therefore an int cast won't overflow.
 		int disX = abs( (int)curr.m_x - (int)next.m_x );
 		int disY = abs( (int)curr.m_y - (int)next.m_y );
-		if( disX != disY )
-			return false;
 
-		if( disX == 0 || disX > 2 )
-			return false;
-
-		if( i > 0 && disY == 1 )
-			return false;
+		// Since we know how the moves are being build, we just need to do asserts.
+		assert( disX == disY );
+		assert( disX || disY );
+		assert( disX <= 2 );
+		assert( i == 0 || disY == 2 );
 
 		// Only kings can reverse direction.
 		if( !isKing )
@@ -175,6 +177,8 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::MakeMoveIfValid( EPlayer player, const CMove& move )
 {
+	CPerfTimerCall __call( s_MakeMoveIfValid );
+
 	std::vector<SPosition> removed;
 	SPosition final;
 	ESquareState newState;
@@ -298,6 +302,8 @@ bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::GetMoves( EPlayer player, std::vector<CMove>& moves ) const
 {
+	CPerfTimerCall __call( s_GetMoves );
+
 	bool hasJumps = false;
 
 	for( unsigned int x = 0; x < kBoardSize; ++x )
@@ -346,32 +352,6 @@ bool CCheckersBoard::IsKing( ESquareState square )
 	default:
 		return false;
 	};
-}
-
-//--------------------------------------------------------------------------------------
-bool CCheckersBoard::GetNextSpace( const SPosition& start, int moveIndex, SPosition& next )
-{
-	switch( moveIndex )
-	{
-	case 0:
-		next.m_x = start.m_x + 1;
-		next.m_y = start.m_y + 1;
-		return next.IsValid();
-	case 1:
-		next.m_x = start.m_x - 1;
-		next.m_y = start.m_y + 1;
-		return next.IsValid();
-	case 2:
-		next.m_x = start.m_x + 1;
-		next.m_y = start.m_y - 1;
-		return next.IsValid();
-	case 3:
-		next.m_x = start.m_x - 1;
-		next.m_y = start.m_y - 1;
-		return next.IsValid();
-	}
-
-	return false;
 }
 
 //--------------------------------------------------------------------------------------
