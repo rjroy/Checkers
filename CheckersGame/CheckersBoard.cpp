@@ -1,10 +1,10 @@
 #include "StdAfx.h"
 #include "CheckersBoard.h"
 
-
 CPerfTimer CCheckersBoard::s_GetMoves( "CCheckersBoard::GetMoves" );
 CPerfTimer CCheckersBoard::s_IsValidMove( "CCheckersBoard::IsValidMove" );
 CPerfTimer CCheckersBoard::s_MakeMoveIfValid( "CCheckersBoard::MakeMoveIfValid" );
+
 //--------------------------------------------------------------------------------------
 static int BitCount( unsigned int i )
 {
@@ -17,30 +17,6 @@ static int BitCount( unsigned int i )
 static int BitCount( unsigned __int64 l )
 {
 	return BitCount( (unsigned int)l ) + BitCount( (unsigned int)(l >> 32) );
-}
-
-//--------------------------------------------------------------------------------------
-int SPosition::Compare( const SPosition& rhs ) const
-{
-	int result = m_x - rhs.m_x;
-	if( result )
-		return result;
-	return m_y - rhs.m_y;
-}
-
-//--------------------------------------------------------------------------------------
-int CMove::Compare( const CMove& rhs ) const
-{
-	int result = m_start.Compare( rhs.m_start );
-	if( result )
-		return result;
-	
-	result = m_sequence.size() - rhs.m_sequence.size();
-	if( result )
-		return result;
-
-	// NOTE: m_sequence.size() == rhs.m_sequence.size()
-	return memcmp( &m_sequence[0], &rhs.m_sequence[0], sizeof( SPosition ) * m_sequence.size() );
 }
 
 //--------------------------------------------------------------------------------------
@@ -77,14 +53,9 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 	if( pRemovedPieces )
 		pRemovedPieces->clear();
 
-	if( !move.m_start.IsValid() )
-		return false;
-
-	if( GetPlayerOwner( GetSquareState( move.m_start ) ) != player )
-		return false;
-
-	if( !move.m_sequence.size() )
-		return false;
+	assert( move.m_start.IsValid() );
+	assert( GetPlayerOwner( GetSquareState( move.m_start ) ) == player );
+	assert( move.m_sequence.size() );
 
 	EPlayer opponentPlayer = GetOpponent( player );
 	bool isKing = IsKing( GetSquareState( move.m_start ) );
@@ -104,8 +75,7 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 		SPosition next = move.m_sequence[i];
 		assert( next.IsValid() );
 
-		if( GetSquareState( next ) != SquareState_Blank )
-			return false;
+		assert( GetSquareState( next ) == SquareState_Blank );
 		if( next == prev )
 			return false;
 
@@ -141,9 +111,7 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 			SPosition middle;
 			if( !GetMiddlePosition( curr, next, middle ) )
 				return false;
-			if( GetPlayerOwner( GetSquareState( middle ) ) != opponentPlayer )
-				return false;
-
+			assert( GetPlayerOwner( GetSquareState( middle ) ) == opponentPlayer );
 			if( pRemovedPieces )
 				pRemovedPieces->push_back( middle );
 			hasJumped = true;
@@ -224,6 +192,10 @@ bool CCheckersBoard::AddSimpleMoves( EPlayer player, const SPosition& start, std
 	{
 		if( !GetNextSpace( test.m_start, move, test.m_sequence[ 0 ] ) )
 			continue;
+
+		if( GetSquareState( test.m_sequence[ 0 ] ) != SquareState_Blank )
+			continue;
+
 		if( !IsValidMove( player, test ) )
 			continue;
 
@@ -248,7 +220,13 @@ bool CCheckersBoard::AddJumpMoves( EPlayer player, const SPosition& start, bool 
 		if( !GetNextSpace( test.m_start, move, test.m_sequence[ 0 ] ) )
 			continue;
 
+		if( GetSquareState( test.m_sequence[ 0 ] ) == SquareState_Blank )
+			continue;
+
 		if( !GetNextSpace( test.m_sequence[ 0 ], move, test.m_sequence[ 0 ] ) )
+			continue;
+
+		if( GetSquareState( test.m_sequence[ 0 ] ) != SquareState_Blank )
 			continue;
 
 		if( !IsValidMove( player, test ) )
@@ -277,6 +255,8 @@ bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::
 	if( test.m_sequence.size() < 2 )
 		return added;
 
+	EPlayer opponentPlayer = GetOpponent( player );
+
 	const SPosition& prev = test.m_sequence[ test.m_sequence.size() - 2 ];
 	SPosition& curr = test.m_sequence[ test.m_sequence.size() - 1 ];
 
@@ -285,7 +265,13 @@ bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::
 		if( !GetNextSpace( prev, move, curr ) )
 			continue;
 
+		if( GetPlayerOwner( GetSquareState( curr ) ) != opponentPlayer )
+			continue;
+
 		if( !GetNextSpace( curr, move, curr ) )
+			continue;
+
+		if( GetSquareState( curr ) != SquareState_Blank )
 			continue;
 
 		if( !IsValidMove( player, test ) )
@@ -321,46 +307,6 @@ bool CCheckersBoard::GetMoves( EPlayer player, std::vector<CMove>& moves ) const
 	}
 
 	return !moves.empty();
-}
-
-//--------------------------------------------------------------------------------------
-EPlayer CCheckersBoard::GetPlayerOwner( ESquareState square )
-{
-	switch( square )
-	{
-	case SquareState_Red:
-	case SquareState_RedKing:
-		return Player_Red;
-	case SquareState_Black:
-	case SquareState_BlackKing:
-		return Player_Black;
-	default:
-		return Player_None;
-	};
-}
-
-//--------------------------------------------------------------------------------------
-bool CCheckersBoard::IsKing( ESquareState square )
-{
-	switch( square )
-	{
-	case SquareState_RedKing:
-	case SquareState_BlackKing:
-		return true;
-	case SquareState_Black:
-	case SquareState_Red:
-	default:
-		return false;
-	};
-}
-
-//--------------------------------------------------------------------------------------
-bool CCheckersBoard::GetMiddlePosition( const SPosition& start, const SPosition& next, SPosition& middle )
-{
-	middle.m_x = ( start.m_x + next.m_x ) / 2;
-	middle.m_y = ( start.m_y + next.m_y ) / 2;
-	
-	return( middle.IsValid() && middle != start && middle != next );
 }
 
 //--------------------------------------------------------------------------------------

@@ -2,11 +2,12 @@
 
 #include "stdafx.h"
 
+#include "GameBoardBasics.h"
+
 #include <memory.h>
 #include <vector>
 #include <xhash>
 
-static const int kBoardSize = 8;
 static const int kMoveIndexLimit = 4;
 
 //--------------------------------------------------------------------------------------
@@ -20,50 +21,6 @@ enum ESquareState
 	SquareState_BlackKing,
 
 	SquareStateCount
-};
-
-//--------------------------------------------------------------------------------------
-// Used to identify the two players.
-enum EPlayer
-{
-	Player_Black,
-	Player_Red,
-	Player_None,
-	
-	PlayerCount
-};
-
-//--------------------------------------------------------------------------------------
-// Represents a position on the board.
-struct SPosition
-{
-	unsigned char m_x : 4;
-	unsigned char m_y : 4;
-
-	SPosition() : m_x(0), m_y(0) {}
-	SPosition( unsigned int x, unsigned int y ) : m_x(x), m_y(y) { }
-
-	int ToIndex() const { return m_x * kBoardSize + m_y; }
-
-	int Compare( const SPosition& rhs ) const;
-	bool IsValid() const { return ( m_x < kBoardSize && m_y < kBoardSize ); }
-
-	bool operator == ( const SPosition& rhs ) const { return Compare( rhs ) == 0; }
-	bool operator != ( const SPosition& rhs ) const { return Compare( rhs ) != 0; }
-};
-
-//--------------------------------------------------------------------------------------
-// Represents a potential move.
-class CMove
-{
-public:
-	SPosition m_start;
-	std::vector<SPosition> m_sequence;
-
-	int Compare( const CMove& rhs ) const;
-
-	bool operator == ( const CMove& rhs ) const { return Compare( rhs ) == 0; }
-	bool operator != ( const CMove& rhs ) const { return Compare( rhs ) != 0; }
 };
 
 //--------------------------------------------------------------------------------------
@@ -260,4 +217,44 @@ inline bool CCheckersBoard::GetNextSpace( const SPosition& start, int moveIndex,
 	}
 
 	return false;
+}
+
+//--------------------------------------------------------------------------------------
+inline EPlayer CCheckersBoard::GetPlayerOwner( ESquareState square )
+{
+	switch( square )
+	{
+	case SquareState_Red:
+	case SquareState_RedKing:
+		return Player_Red;
+	case SquareState_Black:
+	case SquareState_BlackKing:
+		return Player_Black;
+	default:
+		return Player_None;
+	};
+}
+
+//--------------------------------------------------------------------------------------
+inline bool CCheckersBoard::IsKing( ESquareState square )
+{
+	switch( square )
+	{
+	case SquareState_RedKing:
+	case SquareState_BlackKing:
+		return true;
+	case SquareState_Black:
+	case SquareState_Red:
+	default:
+		return false;
+	};
+}
+
+//--------------------------------------------------------------------------------------
+inline bool CCheckersBoard::GetMiddlePosition( const SPosition& start, const SPosition& next, SPosition& middle )
+{
+	middle.m_x = ( start.m_x + next.m_x ) / 2;
+	middle.m_y = ( start.m_y + next.m_y ) / 2;
+	
+	return( middle.IsValid() && middle != start && middle != next );
 }

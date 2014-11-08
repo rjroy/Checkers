@@ -1,3 +1,5 @@
+#pragma once
+
 #include "StdAfx.h"
 #include "ComputerPlayer.h"
 
@@ -5,11 +7,15 @@
 
 typedef std::pair<CMove, int> TScoredMove;
 
-CPerfTimer CComputerPlayer::s_Move( "CComputerPlayer::Move" );
-CPerfTimer CComputerPlayer::s_AlphaBeta( "CComputerPlayer::AlphaBeta" );
+template <typename TGameBoard>
+CPerfTimer CComputerPlayer<TGameBoard>::s_Move( "CComputerPlayer::Move" );
+
+template <typename TGameBoard>
+CPerfTimer CComputerPlayer<TGameBoard>::s_AlphaBeta( "CComputerPlayer::AlphaBeta" );
 
 //--------------------------------------------------------------------------------------
-bool CComputerPlayer::Move( CCheckersBoard& board )
+template <typename TGameBoard>
+bool CComputerPlayer<TGameBoard>::Move( TGameBoard& board )
 {
 	CPerfTimerCall __call( s_Move );
 
@@ -27,7 +33,7 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 	std::vector<TScoredMove> scoredMoves( moves.size() );
 	for( size_t i = 0; i < moves.size(); ++i )
 	{
-		scoredMoves[i] = TScoredMove( moves[i], AlphaBeta( board, moves[i], m_player, m_depth, CCheckersBoard::MinScore, CCheckersBoard::MaxScore ) );
+		scoredMoves[i] = TScoredMove( moves[i], AlphaBeta( board, moves[i], m_player, m_depth, TGameBoard::MinScore, TGameBoard::MaxScore ) );
 	}
 
 	// Re-sort moves 
@@ -41,7 +47,8 @@ bool CComputerPlayer::Move( CCheckersBoard& board )
 }
 
 //--------------------------------------------------------------------------------------
-int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta )
+template <typename TGameBoard>
+int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta )
 {
 	CPerfTimerCall __call( s_AlphaBeta );
 
@@ -55,60 +62,52 @@ int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, 
 		return board.CalculatePlayerScore( m_player );
 
 	// Stop test if the move is some how invalid.
-	CCheckersBoard cpy( board );
+	TGameBoard cpy( board );
 	if( !cpy.MakeMoveIfValid( movingPlayer, move ) )
 	{
 		return board.CalculatePlayerScore( m_player );
 	}
 
 	// Stop test if the next player cannot move after the moving player moves.
-	EPlayer nextPlayer = CCheckersBoard::GetOpponent( movingPlayer );
+	EPlayer nextPlayer = TGameBoard::GetOpponent( movingPlayer );
 	std::vector<CMove> moves;
 	if( !cpy.GetMoves( nextPlayer, moves ) || moves.empty() )
 	{
 		return cpy.CalculatePlayerScore( m_player );
 	}
 
-	// Collect the next board score for this player based on each move.
-	std::vector<TScoredMove> scoredMoves( moves.size() );
-	for( size_t i = 0; i < scoredMoves.size(); ++i )
-	{
-		scoredMoves[i] = std::make_pair( moves[i], CCheckersBoard( cpy, nextPlayer, moves[i] ).CalculatePlayerScore( m_player ) );
-	}
-
-	CMove* pExpectedMove = m_expectedMove.Get( cpy );
-
 	// sort based on simple expected score to try and get better early pruning.
-	auto compareScore = [this, nextPlayer, pExpectedMove]( const TScoredMove& lhs, const TScoredMove& rhs )->bool{
+	CMove* pExpectedMove = m_expectedMove.Get( cpy );
+	auto compareScore = [this, nextPlayer, pExpectedMove]( const CMove& lhs, const CMove& rhs )->bool{
 		// Assure the expected move is at the front.		
 		if( pExpectedMove )
 		{
-			if( lhs.first == rhs.first )
+			if( lhs == rhs )
 			{
 				return false;
 			}
-			if( lhs.first == *pExpectedMove ) 
+			if( lhs == *pExpectedMove ) 
 			{
 				return true;
 			}
-			if( rhs.first == *pExpectedMove )
+			if( rhs == *pExpectedMove )
 			{
 				return false;
 			}
 		}
-		return ( m_player == nextPlayer ) ? ( lhs.second < rhs.second ) : ( lhs.second > rhs.second ); 
+		return ( m_player == nextPlayer ) ? ( lhs < rhs ) : ( lhs > rhs ); 
 	};
-	std::sort( scoredMoves.begin(), scoredMoves.end(), compareScore );	
+	std::sort( moves.begin(), moves.end(), compareScore );	
 
 	const unsigned int newDepth = depth - 1;
 
 	if( m_player == nextPlayer )
 	{
 		// Maximizing this player
-		size_t bestMove = scoredMoves.size();
-		for( size_t i = 0; i < scoredMoves.size(); ++i )
+		size_t bestMove = moves.size();
+		for( size_t i = 0; i < moves.size(); ++i )
 		{
-			int val = AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta );
+			int val = AlphaBeta( cpy, moves[i], nextPlayer, newDepth, alpha, beta );
 			if( val > alpha )
 			{
 				alpha = val;
@@ -118,17 +117,17 @@ int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, 
 					break;
 			}
 		}
-		if( bestMove < scoredMoves.size() )
-			m_expectedMove.UpdateCache( cpy, scoredMoves[bestMove].first );
+		if( bestMove < moves.size() )
+			m_expectedMove.UpdateCache( cpy, moves[bestMove] );
 		return alpha;
 	}
 	else
 	{
 		// Minimizing this player.
-		size_t bestMove = scoredMoves.size();
-		for( size_t i = 0; i < scoredMoves.size(); ++i )
+		size_t bestMove = moves.size();
+		for( size_t i = 0; i < moves.size(); ++i )
 		{
-			int val = AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta );
+			int val = AlphaBeta( cpy, moves[i], nextPlayer, newDepth, alpha, beta );
 			if( val < beta )
 			{
 				beta = val;
@@ -138,8 +137,8 @@ int CComputerPlayer::AlphaBeta( const CCheckersBoard& board, const CMove& move, 
 					break;
 			}
 		}
-		if( bestMove < scoredMoves.size() )
-			m_expectedMove.UpdateCache( cpy, scoredMoves[bestMove].first );
+		if( bestMove < moves.size() )
+			m_expectedMove.UpdateCache( cpy, moves[bestMove] );
 		return beta;
 	}
 }

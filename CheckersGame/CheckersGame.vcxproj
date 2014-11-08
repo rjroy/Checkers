@@ -71,6 +71,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CheckersBoard.h" />
+    <ClInclude Include="GameBoardBasics.h" />
     <ClInclude Include="LearningCache.h" />
     <ClInclude Include="ComputerPlayer.h" />
     <ClInclude Include="PerfTimer.h" />
@@ -79,7 +80,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CheckersBoard.cpp" />
-    <ClCompile Include="ComputerPlayer.cpp" />
+    <ClCompile Include="ComputerPlayer.inl" />
+    <ClCompile Include="GameBoardBasics.cpp" />
     <ClCompile Include="PerfTimer.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

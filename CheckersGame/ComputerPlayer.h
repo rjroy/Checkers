@@ -2,13 +2,14 @@
 
 #include "stdafx.h"
 
-#include "CheckersBoard.h"
+#include "GameBoardBasics.h"
 #include "LearningCache.h"
 
 #include <map>
 
 
 //--------------------------------------------------------------------------------------
+template <typename TGameBoard>
 class CComputerPlayer
 {
 	enum { ScoreCacheSize = 1000, MoveCacheSize = 10240 };
@@ -20,7 +21,7 @@ public:
 	EPlayer GetPlayer() const { return m_player; }
 
 	// Asks that the computer make a random valid move.
-	bool Move( CCheckersBoard& board );
+	bool Move( TGameBoard& board );
 
 	static CPerfTimer s_Move;
 	static CPerfTimer s_AlphaBeta;
@@ -30,12 +31,12 @@ private:
 	const unsigned int m_depth;
 
 	// Memory of expected AlphaBeta results.
-	typedef CLearningCache<CCheckersBoard, int> TExpectedScore;
-	typedef CLearningCache<CCheckersBoard, CMove> TExpectedMove;
+	typedef CLearningCache<TGameBoard, int> TExpectedScore;
+	typedef CLearningCache<TGameBoard, CMove> TExpectedMove;
 	TExpectedScore m_expectedScore;
 	TExpectedMove  m_expectedMove;
 
 	// Determine the best score for the given move using alpha-beta prunning.
-	int AlphaBeta( const CCheckersBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
+	int AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
 };
 

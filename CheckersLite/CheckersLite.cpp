@@ -5,6 +5,7 @@
 
 #include "Display.h"
 #include "ComputerPlayer.h"
+#include "ComputerPlayer.inl"
 
 #include <time.h>
 #include <iostream>
@@ -12,12 +13,14 @@ using namespace std;
 
 bool UserMove( CCheckersBoard& board, const CDisplay& display, EPlayer userPlayer );
 
+
 int _tmain(int argc, _TCHAR* argv[])
 {
 	srand( (unsigned int)time(NULL) );
 
-	CComputerPlayer p1( Player_Red, 3 );
-	CComputerPlayer p2( Player_Black, 8 );
+	
+	CComputerPlayer<CCheckersBoard> p1( Player_Red, 3 );
+	CComputerPlayer<CCheckersBoard> p2( Player_Black, 10 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
 	for( ;; ) // for repeated testing.
@@ -63,8 +66,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	cout << CCheckersBoard::s_GetMoves;
 	cout << CCheckersBoard::s_IsValidMove;
 	cout << CCheckersBoard::s_MakeMoveIfValid;
-	cout << CComputerPlayer::s_AlphaBeta;
-	cout << CComputerPlayer::s_Move;
+	cout << CComputerPlayer<CCheckersBoard>::s_AlphaBeta;
+	cout << CComputerPlayer<CCheckersBoard>::s_Move;
 
 	cin.get();
 	}

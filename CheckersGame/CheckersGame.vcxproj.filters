@@ -36,6 +36,9 @@
     <ClInclude Include="PerfTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GameBoardBasics.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -44,10 +47,13 @@
     <ClCompile Include="CheckersBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ComputerPlayer.cpp">
+    <ClCompile Include="PerfTimer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PerfTimer.cpp">
+    <ClCompile Include="ComputerPlayer.inl">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GameBoardBasics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
