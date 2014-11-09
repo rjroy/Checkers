@@ -40,7 +40,7 @@ bool CComputerPlayer<TGameBoard>::Move( TGameBoard& board )
 	std::vector<TScoredMove> scoredMoves( moves.size() );
 	for( size_t i = 0; i < moves.size(); ++i )
 	{
-		scoredMoves[i] = TScoredMove( moves[i], AlphaBeta( board, moves[i], m_player, m_depth, TGameBoard::MinScore, TGameBoard::MaxScore ) );
+		scoredMoves[i] = TScoredMove( moves[i], AlphaBeta( board, moves[i], m_player, 0, TGameBoard::MinScore, TGameBoard::MaxScore ) );
 	}
 
 	// Re-sort moves to find the best move (highest to lowest).
@@ -81,13 +81,17 @@ void CComputerPlayer<TGameBoard>::SortByGuess( std::vector<TScoredMove>& scoredM
 
 //--------------------------------------------------------------------------------------
 template <typename TGameBoard>
-int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta )
+int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int draft, int alpha, int beta )
 {
 	CPerfTimerCall __call( s_AlphaBeta );
 
 	// Stop testing if at max depth.
-	if( !depth )
-		return board.CalculatePlayerScore( m_player );
+	if( draft >= m_depth )
+	{
+		int result = board.CalculatePlayerScore( m_player );
+		m_table.UpdateCache( board, STranspositionEntry( draft, result, ScoreType_Exact ) );
+		return result;
+	}
 
 	// Stop test if the move is some how invalid.
 	TGameBoard cpy( board );
@@ -95,7 +99,7 @@ int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove
 		return board.CalculatePlayerScore( m_player );
 
 	STranspositionEntry* pEntry = m_table.Get( cpy );
-	if( pEntry && pEntry->m_draft <= ( m_depth - depth ) )
+	if( pEntry && pEntry->m_draft <= draft )
 		return pEntry->m_score;
 
 	// Stop test if the next player cannot move after the moving player moves.
@@ -104,7 +108,7 @@ int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove
 	if( !cpy.GetMoves( nextPlayer, moves ) || moves.empty() )
 	{
 		int result = cpy.CalculatePlayerScore( m_player );
-		m_table.UpdateCache( cpy, STranspositionEntry( m_depth - depth, result, ScoreType_Exact ) );
+		m_table.UpdateCache( cpy, STranspositionEntry( draft, result, ScoreType_Exact ) );
 		return result;
 	}
 
@@ -112,19 +116,19 @@ int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove
 	std::vector<TScoredMove> scoredMoves;
 	SortByGuess( scoredMoves, moves, cpy, nextPlayer );
 
-	const unsigned int newDepth = depth - 1;
+	const unsigned int newDraft = draft + 1;
 	int result = 0;
 	if( m_player == nextPlayer )
 	{
 		// Maximizing this player
 		for( size_t i = 0; i < scoredMoves.size(); ++i )
 		{
-			alpha = max( alpha, AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta ) );
+			alpha = max( alpha, AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDraft, alpha, beta ) );
 			// prune because we are not going to find any better.
 			if( beta <= alpha )
 				break;
 		}
-		m_table.UpdateCache( cpy, STranspositionEntry( m_depth - depth, alpha, ScoreType_UpperBound ) );
+		m_table.UpdateCache( cpy, STranspositionEntry( draft, alpha, ScoreType_UpperBound ) );
 		result = alpha;
 	}
 	else
@@ -132,12 +136,12 @@ int CComputerPlayer<TGameBoard>::AlphaBeta( const TGameBoard& board, const CMove
 		// Minimizing this player.
 		for( size_t i = 0; i < scoredMoves.size(); ++i )
 		{
-			beta = min( beta, AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDepth, alpha, beta ) );
+			beta = min( beta, AlphaBeta( cpy, scoredMoves[i].first, nextPlayer, newDraft, alpha, beta ) );
 			// prune because we are not going to find any worse.
 			if( beta <= alpha )
 				break;
 		}
-		m_table.UpdateCache( cpy, STranspositionEntry( m_depth - depth, beta, ScoreType_LowerBound ) );
+		m_table.UpdateCache( cpy, STranspositionEntry( draft, beta, ScoreType_LowerBound ) );
 		result = beta;
 	}
 	return result;

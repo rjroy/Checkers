@@ -51,7 +51,7 @@ private:
 	TTranspositionTable m_table;
 
 	// Determine the best score for the given move using alpha-beta prunning.
-	int AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
+	int AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int draft, int alpha, int beta );
 	// Sort by expected score.
 	void SortByGuess( std::vector<TScoredMove>& scoredMoves, const std::vector<CMove>& moves, const TGameBoard& current, EPlayer nextPlayer );
 };
