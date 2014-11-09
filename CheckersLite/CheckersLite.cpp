@@ -23,6 +23,9 @@ int _tmain(int argc, _TCHAR* argv[])
 	CComputerPlayer<CCheckersBoard> p2( Player_Black, 10 );
 	//EPlayer p2 = CCheckersBoard::GetOpponent( p1.GetPlayer() );
 
+	unsigned int p1Wins = 0;
+	unsigned int p2Wins = 0;
+
 	for( ;; ) // for repeated testing.
 	{
 	CDisplay display;
@@ -56,14 +59,24 @@ int _tmain(int argc, _TCHAR* argv[])
 	int p1Score = board.CalculatePlayerScore( p1.GetPlayer() );
 	int p2Score = board.CalculatePlayerScore( p2.GetPlayer() );
 	if( p1Score > p2Score )
+	{
+		p1Wins++;
 		cout << "Player 1 Wins!" << endl;
+	}
 	else if( p2Score > p1Score )
+	{
+		p2Wins++;
 		cout << "Player 2 Wins!" << endl;
+	}
 	else
 		cout << "Tie." << endl;
+	cout << "[ p1: " << p1Wins << " ; p2: " << p2Wins << "]" << endl;
 
 	cout << "DONE" << endl;
 	cout << CCheckersBoard::s_GetMoves;
+	cout << CCheckersBoard::s_AddSimpleMoves;
+	cout << CCheckersBoard::s_AddJumpMoves;
+	cout << CCheckersBoard::s_AddNextJumpMoves;
 	cout << CCheckersBoard::s_IsValidMove;
 	cout << CCheckersBoard::s_MakeMoveIfValid;
 	cout << CComputerPlayer<CCheckersBoard>::s_AlphaBeta;

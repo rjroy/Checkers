@@ -2,6 +2,9 @@
 #include "CheckersBoard.h"
 
 CPerfTimer CCheckersBoard::s_GetMoves( "CCheckersBoard::GetMoves" );
+CPerfTimer CCheckersBoard::s_AddSimpleMoves( "CCheckersBoard::AddSimpleMoves" );
+CPerfTimer CCheckersBoard::s_AddJumpMoves( "CCheckersBoard::AddJumpMoves" );
+CPerfTimer CCheckersBoard::s_AddNextJumpMoves( "CCheckersBoard::AddNextJumpMoves" );
 CPerfTimer CCheckersBoard::s_IsValidMove( "CCheckersBoard::IsValidMove" );
 CPerfTimer CCheckersBoard::s_MakeMoveIfValid( "CCheckersBoard::MakeMoveIfValid" );
 
@@ -50,9 +53,7 @@ bool CCheckersBoard::IsValidMove( EPlayer player, const CMove& move, std::vector
 {
 	CPerfTimerCall __call( s_IsValidMove );
 
-	if( pRemovedPieces )
-		pRemovedPieces->clear();
-
+	assert( !pRemovedPieces || pRemovedPieces->empty() );
 	assert( move.m_start.IsValid() );
 	assert( GetPlayerOwner( GetSquareState( move.m_start ) ) == player );
 	assert( move.m_sequence.size() );
@@ -182,13 +183,24 @@ int CCheckersBoard::CalculatePlayerScore( EPlayer player ) const
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::AddSimpleMoves( EPlayer player, const SPosition& start, std::vector<CMove>& moves ) const
 {
+	CPerfTimerCall __call( s_AddSimpleMoves );
+
 	bool added = false;
 
 	CMove test;
 	test.m_start = start;
 	test.m_sequence.resize( 1 );
 
-	for( unsigned int move = 0; move < kMoveIndexLimit; ++move )
+	unsigned int colorOffset = 0;
+	unsigned int moveCount = 4;
+	bool isKing = IsKing( GetSquareState( start ) );
+	if( !isKing )
+	{
+		colorOffset = ( player == Player_Red ) ? 0 : 2;
+		moveCount = 2;
+	}
+
+	for( unsigned int move = colorOffset; move < colorOffset + moveCount; ++move )
 	{
 		if( !GetNextSpace( test.m_start, move, test.m_sequence[ 0 ] ) )
 			continue;
@@ -196,8 +208,7 @@ bool CCheckersBoard::AddSimpleMoves( EPlayer player, const SPosition& start, std
 		if( GetSquareState( test.m_sequence[ 0 ] ) != SquareState_Blank )
 			continue;
 
-		if( !IsValidMove( player, test ) )
-			continue;
+		assert( IsValidMove( player, test ) );
 
 		moves.push_back( test );
 		added = true;
@@ -209,18 +220,30 @@ bool CCheckersBoard::AddSimpleMoves( EPlayer player, const SPosition& start, std
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::AddJumpMoves( EPlayer player, const SPosition& start, bool hasJumps, std::vector<CMove>& moves ) const
 {
+	CPerfTimerCall __call( s_AddJumpMoves );
+
 	bool added = false;
 
 	CMove test;
 	test.m_start = start;
 	test.m_sequence.resize( 1 );
 
-	for( unsigned int move = 0; move < kMoveIndexLimit; ++move )
+	unsigned int colorOffset = 0;
+	unsigned int moveCount = 4;
+	bool isKing = IsKing( GetSquareState( start ) );
+	if( !isKing )
+	{
+		colorOffset = ( player == Player_Red ) ? 0 : 2;
+		moveCount = 2;
+	}
+
+	EPlayer opponentPlayer = GetOpponent( player );
+	for( unsigned int move = colorOffset; move < colorOffset + moveCount; ++move )
 	{
 		if( !GetNextSpace( test.m_start, move, test.m_sequence[ 0 ] ) )
 			continue;
 
-		if( GetSquareState( test.m_sequence[ 0 ] ) == SquareState_Blank )
+		if( GetPlayerOwner( GetSquareState( test.m_sequence[ 0 ] ) ) != opponentPlayer )
 			continue;
 
 		if( !GetNextSpace( test.m_sequence[ 0 ], move, test.m_sequence[ 0 ] ) )
@@ -229,8 +252,7 @@ bool CCheckersBoard::AddJumpMoves( EPlayer player, const SPosition& start, bool 
 		if( GetSquareState( test.m_sequence[ 0 ] ) != SquareState_Blank )
 			continue;
 
-		if( !IsValidMove( player, test ) )
-			continue;
+		assert( IsValidMove( player, test ) );
 
 		if( !added && !hasJumps )
 			moves.clear();
@@ -246,6 +268,8 @@ bool CCheckersBoard::AddJumpMoves( EPlayer player, const SPosition& start, bool 
 //--------------------------------------------------------------------------------------
 bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::vector<CMove>& moves ) const
 {
+	CPerfTimerCall __call( s_AddNextJumpMoves );
+
 	bool added = false;
 
 	CMove test( start );
@@ -255,12 +279,21 @@ bool CCheckersBoard::AddNextJumpMoves( EPlayer player, const CMove& start, std::
 	if( test.m_sequence.size() < 2 )
 		return added;
 
+	unsigned int colorOffset = 0;
+	unsigned int moveCount = 4;
+	bool isKing = IsKing( GetSquareState( start.m_start ) );
+	if( !isKing )
+	{
+		colorOffset = ( player == Player_Red ) ? 0 : 2;
+		moveCount = 2;
+	}
+
 	EPlayer opponentPlayer = GetOpponent( player );
 
 	const SPosition& prev = test.m_sequence[ test.m_sequence.size() - 2 ];
 	SPosition& curr = test.m_sequence[ test.m_sequence.size() - 1 ];
 
-	for( unsigned int move = 0; move < kMoveIndexLimit; ++move )
+	for( unsigned int move = colorOffset; move < colorOffset + moveCount; ++move )
 	{
 		if( !GetNextSpace( prev, move, curr ) )
 			continue;

@@ -58,6 +58,8 @@ public:
 	bool operator >= ( const CMove& rhs ) const { return Compare( rhs ) >= 0; }
 };
 
+//--------------------------------------------------------------------------------------
+typedef std::pair<CMove, int> TScoredMove;
 
 //--------------------------------------------------------------------------------------
 inline int SPosition::Compare( const SPosition& rhs ) const

@@ -5,16 +5,13 @@
 #include "GameBoardBasics.h"
 #include "LearningCache.h"
 
-#include <map>
-
-
 //--------------------------------------------------------------------------------------
 template <typename TGameBoard>
 class CComputerPlayer
 {
-	enum { ScoreCacheSize = 1000, MoveCacheSize = 10240 };
+	enum { CacheSize = 10240 };
 public:
-	CComputerPlayer( EPlayer player, unsigned int depth = 3 ) : m_player( player ), m_depth( depth ), m_expectedScore(ScoreCacheSize), m_expectedMove(MoveCacheSize) { }
+	CComputerPlayer( EPlayer player, unsigned int depth );
 	~CComputerPlayer(void) {}
 
 	// Returns the player this computer represents.
@@ -30,13 +27,32 @@ private:
 	const EPlayer m_player;
 	const unsigned int m_depth;
 
+	enum EScoreType
+	{
+		ScoreType_Exact,
+		ScoreType_UpperBound,
+		ScoreType_LowerBound,
+
+		ScoreTypeCount
+	};
+
+	struct STranspositionEntry
+	{
+		unsigned int m_draft;
+		unsigned int m_score;
+		EScoreType m_scoreType;
+
+		STranspositionEntry( unsigned int draft, unsigned int score, EScoreType scoreType ) : m_draft(draft), m_score(score), m_scoreType(scoreType) { }
+	};
+
+
 	// Memory of expected AlphaBeta results.
-	typedef CLearningCache<TGameBoard, int> TExpectedScore;
-	typedef CLearningCache<TGameBoard, CMove> TExpectedMove;
-	TExpectedScore m_expectedScore;
-	TExpectedMove  m_expectedMove;
+	typedef CLearningCache<TGameBoard, STranspositionEntry> TTranspositionTable;
+	TTranspositionTable m_table;
 
 	// Determine the best score for the given move using alpha-beta prunning.
 	int AlphaBeta( const TGameBoard& board, const CMove& move, EPlayer movingPlayer, unsigned int depth, int alpha, int beta );
+	// Sort by expected score.
+	void SortByGuess( std::vector<TScoredMove>& scoredMoves, const std::vector<CMove>& moves, const TGameBoard& current, EPlayer nextPlayer );
 };
 

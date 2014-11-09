@@ -78,6 +78,9 @@ public:
 	}
 
 	static CPerfTimer s_GetMoves;
+	static CPerfTimer s_AddSimpleMoves;
+	static CPerfTimer s_AddJumpMoves;
+	static CPerfTimer s_AddNextJumpMoves;
 	static CPerfTimer s_IsValidMove;
 	static CPerfTimer s_MakeMoveIfValid;
 
